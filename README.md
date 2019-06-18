@@ -4,8 +4,7 @@ Docker repository for creating images for the LDAP Tool Box Self Service Passwor
 
 
 docker build -t anagno/ssl .
-docker run -e LDAP_SERVER="test" -e LDAP_BINDDN="LDAP_BINDDN" -e LDAP_BINDPASS="LDAP_BINDPASS" -e LDAP_BASE_SEARCH="LDAP_BASE_SEARCH" anagno/ssl
-
+docker run -e LDAP_SERVER="ldap://openldap:389" -e LDAP_BINDDN="cn=admin,dc=anagno,dc=me" -e LDAP_BINDPASS_FILE="/run/secrets/file" -e LDAP_BASE_SEARCH="dc=anagno,dc=me" -e DEBUG="true" --volume /home/anagno/Documents/projects/swarm/containers/docker-SelfServicePassword/password.txt:/run/secrets/file anagno/ssl
 
 ## Available Configuration Parameters
 | Parameter | Description |
@@ -15,7 +14,7 @@ docker run -e LDAP_SERVER="test" -e LDAP_BINDDN="LDAP_BINDDN" -e LDAP_BINDPASS="
 | `LDAP_STARTTLS: ` | Enable TLS on Ldap bind. Defaults to `false`. |
 | `LDAP_BINDDN: ` | Ldap bind dn. **It is required.** |
 | `LDAP_BINDPASS: ` | Ldap bind password. **It is required.** |
-| `LDAP_BASE: ` | Base where we can search for users. **It is required.** |
+| `LDAP_BASE_SEARCH: ` | Base where we can search for users. **It is required.** |
 | `LDAP_LOGIN_ATTRIBUTE: ` | Ldap property used for user searching. Defaults to `uid` |
 | `LDAP_FULLNAME_ATTRIBUTE: ` | Ldap property to get user fullname. Defaults to `cn` |
 | `LDAP_FILTER: ` | Ldap property to set the filter. Defaults to `(&(objectClass=person)($ldap_login_attribute={login}))`. You will have to **escape the & character** by using \. E.g. `(\&(objectClass=person)($ldap_login_attribute={login}))` |
@@ -33,6 +32,7 @@ docker run -e LDAP_SERVER="test" -e LDAP_BINDDN="LDAP_BINDDN" -e LDAP_BINDPASS="
 | `PASSWORD_MIN_DIGIT: ` | Minimal digit characters. Defaults to `0` (unchecked).  |
 | `PASSWORD_MIN_SPECIAL: ` | Minimal special characters. Defaults to `0` (unchecked).  |
 | `PASSWORD_NO_REUSE: ` | Dont reuse the same password as currently. Defaults to `false`. |
+| `USE_PWNED: ` | Use the pwned service. Defaults to `false`. |
 | `PASSWORD_SHOW_POLICY: ` | Show policy constraints message: `always` `never` `onerror`. Defaults to `never` |
 | `PASSWORD_SHOW_POLICY_POSITION: ` | Position of password policy constraints message: `above` `below` - the form. Defaults to `above` |
 | `WHO_CAN_CHANGE_PASSWORD: ` | Who changes the password?  Also applicable for question/answer save `user`: the user itself `manager`: the above binddn. Defaults to `user` |

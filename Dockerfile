@@ -1,4 +1,4 @@
-FROM php:7.3-fpm-alpine3.9
+FROM php:7.3-apache-stretch
 
 ARG SSL_RELEASE
 
@@ -8,30 +8,57 @@ LABEL description="Docker repository for creating images for the LDAP Tool Box S
 # entrypoint.sh dependencies
 RUN set -ex; \
     \
-    apk add --no-cache \
+    apt-get update; \
+    apt-get install -y --no-install-recommends \
         bash \
-        libldap
+        ; \
+    rm -rf /var/lib/apt/lists/*;    
 
 # install the PHP extensions we need
 # see https://github.com/ltb-project/self-service-password#prerequisite
 RUN set -ex; \
     \
-    apk add --no-cache --virtual .build-deps \
-        $PHPIZE_DEPS \
+    savedAptMark="$(apt-mark showmanual)"; \
+    \
+    apt-get update; \
+    apt-get install -y --no-install-recommends \
         libmcrypt-dev \
-        openldap-dev \
+        libldap2-dev \
     ; \
     \
-    docker-php-ext-configure ldap; \
+    debMultiarch="$(dpkg-architecture --query DEB_BUILD_MULTIARCH)"; \
+    docker-php-ext-configure ldap --with-libdir="lib/$debMultiarch"; \
     docker-php-ext-install \
         ldap \
         mbstring \
+        #sendmail sendmail-bin mailutils \
     ; \
     \
-    apk del .build-deps
+    # reset apt-mark's "manual" list so that "purge --auto-remove" will remove all build dependencies
+    apt-mark auto '.*' > /dev/null; \
+    apt-mark manual $savedAptMark; \
+    ldd "$(php -r 'echo ini_get("extension_dir");')"/*.so \
+        | awk '/=>/ { print $3 }' \
+        | sort -u \
+        | xargs -r dpkg-query -S \
+        | cut -d: -f1 \
+        | sort -u \
+        | xargs -rt apt-mark manual; \
+    \
+    apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \
+    rm -rf /var/lib/apt/lists/*
 
 # Use the default production configuration
 RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
+
+RUN a2enmod rewrite remoteip ;\
+    {\
+     echo RemoteIPHeader X-Real-IP ;\
+     echo RemoteIPTrustedProxy 10.0.0.0/8 ;\
+     echo RemoteIPTrustedProxy 172.16.0.0/12 ;\
+     echo RemoteIPTrustedProxy 192.168.0.0/16 ;\
+    } > /etc/apache2/conf-available/remoteip.conf;\
+a2enconf remoteip
 
 # installing the serf-service-password
 RUN \
@@ -48,12 +75,14 @@ RUN \
     rm -rf \
         /tmp/*
 
-COPY config.inc.php.template /var/www/html/conf/config.inc.php
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
+# We are removing the configuration because we will create it in the entrypoint.sh
+RUN rm -r /var/www/html/conf/config.inc.php
+
 ENTRYPOINT ["/entrypoint.sh"]
-CMD ["php-fpm"]
+CMD ["apache2-foreground"]
 
 # Copyright (c) 2019 Vasileios Athanasios Anagnostopoulos
 
