@@ -31,7 +31,6 @@ RUN set -ex; \
     docker-php-ext-install \
         ldap \
         mbstring \
-        #sendmail sendmail-bin mailutils \
     ; \
     \
     # reset apt-mark's "manual" list so that "purge --auto-remove" will remove all build dependencies
@@ -61,7 +60,7 @@ RUN a2enmod headers && \
     } > /etc/apache2/conf-available/remoteip.conf;\
 a2enconf remoteip
 
-ADD apache.conf /etc/apache2/sites-enabled/000-default.conf
+ADD config/apache.conf /etc/apache2/sites-enabled/000-default.conf
 RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
 
 # installing the serf-service-password
