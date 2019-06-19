@@ -51,7 +51,8 @@ RUN set -ex; \
 # Use the default production configuration
 RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
 
-RUN a2enmod rewrite remoteip ;\
+RUN a2enmod headers && \
+    a2enmod rewrite remoteip ;\
     {\
      echo RemoteIPHeader X-Real-IP ;\
      echo RemoteIPTrustedProxy 10.0.0.0/8 ;\
@@ -59,6 +60,9 @@ RUN a2enmod rewrite remoteip ;\
      echo RemoteIPTrustedProxy 192.168.0.0/16 ;\
     } > /etc/apache2/conf-available/remoteip.conf;\
 a2enconf remoteip
+
+ADD apache.conf /etc/apache2/sites-enabled/000-default.conf
+RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
 
 # installing the serf-service-password
 RUN \
