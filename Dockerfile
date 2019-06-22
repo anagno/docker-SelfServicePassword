@@ -1,9 +1,12 @@
+ARG SSL_RELEASE
+ARG BUILD_DATE
+ARG VERSION
+
 FROM php:7.3-apache-stretch
 
-ARG SSL_RELEASE
-
+LABEL build_version="Docker image version:- ${VERSION} Build-date:- ${BUILD_DATE}"
+LABEL description="LDAP Tool Box Self Service Password container image (from anagno)"
 LABEL maintainer="Vasileios Anagnostopoulos <info@anagno.me>"
-LABEL description="Docker repository for creating images for the LDAP Tool Box Self Service Password"
 
 # entrypoint.sh dependencies
 RUN set -ex; \
@@ -12,7 +15,7 @@ RUN set -ex; \
     apt-get install -y --no-install-recommends \
         bash \
         ; \
-    rm -rf /var/lib/apt/lists/*;    
+    rm -rf /var/lib/apt/lists/*;
 
 # install the PHP extensions we need
 # see https://github.com/ltb-project/self-service-password#prerequisite
@@ -67,7 +70,7 @@ RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
 RUN \
     if [ -z ${SSL_RELEASE+x} ]; then \
         SSL_RELEASE=$(curl -sX GET "https://api.github.com/repos/ltb-project/self-service-password/releases" \
-	    | awk '/tag_name/{print $4;exit}' FS='[""]'); \
+        | awk '/tag_name/{print $4;exit}' FS='[""]'); \
     fi && \
     curl -o \
         /tmp/self-service-password.tar.gz -SL \

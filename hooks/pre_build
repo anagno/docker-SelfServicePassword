@@ -1,0 +1,104 @@
+#!/bin/bash
+
+echo "[INFO] pre_build script starting"
+
+# The logic here is that DOCKER_TAG variable contains the
+# tag and architecture for which we want build the image
+# as pair with - in between (e.g. latest-amd64)
+# if that is not true, then this script will fail
+TAG=$(echo ${DOCKER_TAG} | cut -f1 -d-)
+TARGET_ARCH=$(echo ${DOCKER_TAG} | cut -f2 -d-)
+BUILD_ARCH=$(uname -m)
+
+
+# We "translate" the official naming convetion of Docker
+# to the one from uname and qemu.
+
+# Default to the original value( why not? )
+TARGET_ARCH_UNAME=${TARGET_ARCH}
+
+if [ ${TARGET_ARCH} == "amd64" ]; then
+    TARGET_ARCH_UNAME="x86_64"
+fi
+
+if [ ${TARGET_ARCH} == "arm32v7" ]; then
+    TARGET_ARCH_UNAME="arm"
+fi
+
+if [ ${TARGET_ARCH} == "arm64v8" ]; then
+    TARGET_ARCH_UNAME="aarch64"
+fi
+
+if [ ${TARGET_ARCH} == "i386" ]; then
+    TARGET_ARCH_UNAME="i386"
+fi
+
+ echo "[INFO] DOCKER_TAG:" ${DOCKER_TAG}
+ echo "[INFO] TAG:" ${TAG}
+ echo "[INFO] TARGET_ARCH:" ${TARGET_ARCH}
+ echo "[INFO] TARGET_ARCH_UNAME:" ${TARGET_ARCH_UNAME}
+ echo "[INFO] BUILD_ARCH:" ${BUILD_ARCH}
+
+
+# The docker manifest command was added in docker-ee version 18.x
+# So update our current installation
+apt-get -y update
+apt-get -y --only-upgrade install docker-ee
+
+echo "[INFO] Docker version:" $(docker --version)
+
+
+if [ ${BUILD_ARCH} == ${TARGET_ARCH_UNAME} ]; then
+    echo "[INFO] Building image natively. Exiting"
+    exit
+fi
+
+docker run \
+  --rm \
+  --privileged \
+multiarch/qemu-user-static:register --reset
+
+docker run \
+  --privileged \
+linuxkit/binfmt:v0.6
+
+# Replace in the Dockerfile the FROM php with the specific one from
+# the architecture we want to build the image for. This way we are forcing
+# the use of the correct architecture. In a native system this procedure
+# is automatic and transparent, but since we are bulding in a x86_64
+# machine we will have to emulate the procedure.
+sed -i "s/FROM php/FROM ${TARGET_ARCH}\/php/" ${DOCKERFILE_PATH} 
+
+# Insert in the Dockerfile after the FROM php, the necessary line to
+# copy the qemu binaries. If we do not do that, then the build will fail
+sed -i "/${TARGET_ARCH}\/php/a COPY --from=multiarch/qemu-user-static:x86_64-${TARGET_ARCH_UNAME} /usr/bin/qemu-${TARGET_ARCH_UNAME}-static /usr/bin/" ${DOCKERFILE_PATH}
+
+echo "[INFO] pre_build script ending"
+
+
+# References:
+# * https://www.smockle.com/blog/2019/04/22/migrating-from-travis-ci-to-docker-hub-automated-builds/
+# * https://aquarat.co.za/2019/04/01/dockerhub-autobuilds-for-multiple-architectures/
+# * https://docs.docker.com/docker-hub/builds/advanced/#custom-build-phase-hooks
+# * https://dev.to/zeerorg/build-multi-arch-docker-images-on-travis-5428
+
+
+# Copyright (c) 2019 Vasileios Athanasios Anagnostopoulos
+
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
