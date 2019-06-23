@@ -1,8 +1,8 @@
+FROM php:7.3-apache-stretch
+
 ARG SSL_RELEASE
 ARG BUILD_DATE
 ARG VERSION
-
-FROM php:7.3-apache-stretch
 
 LABEL build_version="Docker image version:- ${VERSION} Build-date:- ${BUILD_DATE}"
 LABEL description="LDAP Tool Box Self Service Password container image (from anagno)"
@@ -68,10 +68,11 @@ RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
 
 # installing the serf-service-password
 RUN \
-    if [ -z ${SSL_RELEASE+x} ]; then \
+    if [ -z ${SSL_RELEASE} ]; then \
         SSL_RELEASE=$(curl -sX GET "https://api.github.com/repos/ltb-project/self-service-password/releases" \
         | awk '/tag_name/{print $4;exit}' FS='[""]'); \
     fi && \
+    echo "SSL_RELEASE: " ${SSL_RELEASE} && \
     curl -o \
         /tmp/self-service-password.tar.gz -SL \
         https://github.com/ltb-project/self-service-password/archive/${SSL_RELEASE}.tar.gz && \

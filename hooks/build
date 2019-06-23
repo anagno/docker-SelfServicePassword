@@ -2,12 +2,27 @@
 
 echo "[INFO] build script starting"
 
-docker build \
-    --file ${DOCKERFILE_PATH} \
-    --build-arg BUILD_DATE="$(date -u +"%Y-%m-%dT%H:%M:%SZ")" \
-    --build-arg VERSION="$(git rev-parse --short HEAD)" \
-    --tag ${IMAGE_NAME} \
-    .
+if [ ${SOURCE_BRANCH} == "master" ]; then
+
+    docker build \
+        --file ${DOCKERFILE_PATH} \
+        --build-arg BUILD_DATE="$(date -u +"%Y-%m-%dT%H:%M:%SZ")" \
+        --build-arg VERSION="$(git rev-parse --short HEAD)" \
+        --tag ${IMAGE_NAME} \
+        .
+
+else
+
+    # This will only work if the branch is called as the version we want to publish.
+    docker build \
+        --file ${DOCKERFILE_PATH} \
+        --build-arg BUILD_DATE="$(date -u +"%Y-%m-%dT%H:%M:%SZ")" \
+        --build-arg VERSION="$(git rev-parse --short HEAD)" \
+        --build-arg SSL_RELEASE=${SOURCE_BRANCH} \
+        --tag ${IMAGE_NAME} \
+        .
+
+fi
 
 echo "[INFO] build script ending"
 
