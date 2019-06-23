@@ -1,63 +1,68 @@
 #!/bin/bash
 
-echo "[INFO] post_push script starting"
+# For the moment, there seems to be a bug in the docker manifest -ammend
+# https://github.com/docker/cli/issues/954
+# So it is not working. 
+# So I am creating the locally the docker manifest
+
+#echo "[INFO] post_push script starting"
 
 # The logic here is that DOCKER_TAG variable contains the
 # tag and architecture for which we want build the image
 # as pair with - in between (e.g. latest-amd64)
 # if that is not true, then this script will fail
-TAG=$(echo ${DOCKER_TAG} | cut -f1 -d-)
-TARGET_ARCH=$(echo ${DOCKER_TAG} | cut -f2 -d-)
-BUILD_ARCH=$(uname -m)
+#TAG=$(echo ${DOCKER_TAG} | cut -f1 -d-)
+#TARGET_ARCH=$(echo ${DOCKER_TAG} | cut -f2 -d-)
+#BUILD_ARCH=$(uname -m)
 
-echo "[INFO] Manifest declaration begin:"
-docker manifest inspect anagno/self_service_password:${TAG}
+#echo "[INFO] Manifest declaration begin:"
+#docker manifest inspect anagno/self_service_password:${TAG}
 
-MANIFEST_EXIST=$?
-echo "[INFO] Delcation declaration end."
+#MANIFEST_EXIST=$?
+#echo "[INFO] Delcation declaration end."
 
-if [[ ${MANIFEST_EXIST} == 0 ]]; then
-    docker manifest create --amend \
-        anagno/self_service_password:${TAG} \
-        anagno/self_service_password:${DOCKER_TAG}
-else
-    docker manifest create \
-        anagno/self_service_password:${TAG} \
-        anagno/self_service_password:${DOCKER_TAG}
-fi
+#if [[ ${MANIFEST_EXIST} == 0 ]]; then
+#    docker manifest create --amend \
+#        anagno/self_service_password:${TAG} \
+#        anagno/self_service_password:${DOCKER_TAG}
+#else
+#    docker manifest create \
+#        anagno/self_service_password:${TAG} \
+#        anagno/self_service_password:${DOCKER_TAG}
+#fi
 
 
 # We "translate" the official naming convetion of Docker
 # to the one used in the manifest
-if [ ${TARGET_ARCH} == "amd64" ]; then
-    docker manifest annotate \
-        anagno/self_service_password:${TAG} \
-        anagno/self_service_password:${DOCKER_TAG} --os linux --arch amd64
-fi
+#if [ ${TARGET_ARCH} == "amd64" ]; then
+#    docker manifest annotate \
+#        anagno/self_service_password:${TAG} \
+#        anagno/self_service_password:${DOCKER_TAG} --os linux --arch amd64
+#fi
 
-if [ ${TARGET_ARCH} == "arm32v7" ]; then
-    docker manifest annotate \
-        anagno/self_service_password:${TAG} \
-        anagno/self_service_password:${DOCKER_TAG} --os linux --arch arm --variant v7
-fi
+#if [ ${TARGET_ARCH} == "arm32v7" ]; then
+#    docker manifest annotate \
+#        anagno/self_service_password:${TAG} \
+#        anagno/self_service_password:${DOCKER_TAG} --os linux --arch arm --variant v7
+#fi
 
-if [ ${TARGET_ARCH} == "arm64v8" ]; then
-    docker manifest annotate \
-        anagno/self_service_password:${TAG} \
-        anagno/self_service_password:${DOCKER_TAG} --os linux --arch arm64 --variant v8
-fi
+#if [ ${TARGET_ARCH} == "arm64v8" ]; then
+#    docker manifest annotate \
+#        anagno/self_service_password:${TAG} \
+#        anagno/self_service_password:${DOCKER_TAG} --os linux --arch arm64 --variant v8
+#fi
 
-if [ ${TARGET_ARCH} == "i386" ]; then
-        docker manifest annotate \
-        anagno/self_service_password:${TAG} \
-        anagno/self_service_password:${DOCKER_TAG} --os linux --arch 386
-fi
+#if [ ${TARGET_ARCH} == "i386" ]; then
+#        docker manifest annotate \
+#        anagno/self_service_password:${TAG} \
+#        anagno/self_service_password:${DOCKER_TAG} --os linux --arch 386
+#fi
 
 
 
-docker manifest push --purge anagno/self_service_password:${TAG}
+#docker manifest push --purge anagno/self_service_password:${TAG}
 
-echo "[INFO] post_push script ending"
+#echo "[INFO] post_push script ending"
 
 
 # Copyright (c) 2019 Vasileios Athanasios Anagnostopoulos
